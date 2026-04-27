@@ -8,7 +8,6 @@ import '../services/storage_service.dart';
 enum WeatherStatus { initial, loading, loaded, error }
 
 class WeatherProvider extends ChangeNotifier {
-  // Khai báo các đối tượng dịch vụ (instance)
   final WeatherService _weatherService = WeatherService();
   final LocationService _locationService = LocationService();
   final StorageService _storageService = StorageService();
@@ -20,7 +19,6 @@ class WeatherProvider extends ChangeNotifier {
 
   WeatherModel? get currentWeather => _currentWeather;
   List<ForecastModel> get forecast => _forecast;
-
   WeatherStatus get status => _status;
   String get errorMessage => _errorMessage;
 
@@ -36,10 +34,7 @@ class WeatherProvider extends ChangeNotifier {
         position.longitude,
       );
 
-      final cityName = await _locationService.getCityName(
-        position.latitude,
-        position.longitude,
-      );
+      final cityName = _currentWeather!.cityName;
 
       _forecast = await _weatherService.getForecast(cityName);
 
@@ -48,7 +43,9 @@ class WeatherProvider extends ChangeNotifier {
       _status = WeatherStatus.loaded;
     } catch (e) {
       _status = WeatherStatus.error;
-      _errorMessage = e.toString();
+      _errorMessage = e.toString().contains('Failed to get city name')
+          ? 'Không thể xác định tên thành phố tại vị trí này.'
+          : 'Lỗi: ${e.toString()}';
 
       final cached = await _storageService.getCachedWeather();
       if (cached != null) {
@@ -71,7 +68,7 @@ class WeatherProvider extends ChangeNotifier {
       _status = WeatherStatus.loaded;
     } catch (e) {
       _status = WeatherStatus.error;
-      _errorMessage = 'Không tìm thấy thành phố này.';
+      _errorMessage = 'Không tìm thấy thành phố "$cityName".';
     }
     notifyListeners();
   }

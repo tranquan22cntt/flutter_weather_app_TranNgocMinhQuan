@@ -1,30 +1,59 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:lab04_weather_app/main.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_weather_app_tran_ngoc_minh_quan/main.dart';
+import 'package:flutter_weather_app_tran_ngoc_minh_quan/providers/weather_provider.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('Kiểm tra Giao diện Weather App (Comprehensive)', () {
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    setUpAll(() async {
+      dotenv.testLoad(fileInput: 'OPENWEATHER_API_KEY=test_key_123');
+    });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    testWidgets('1. Kiểm tra cấu trúc khởi tạo và nút tìm kiếm', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider(
+          create: (_) => WeatherProvider(),
+          child: const MyApp(),
+        ),
+      );
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+      expect(find.byType(MaterialApp), findsOneWidget);
+
+      expect(find.byType(FloatingActionButton), findsOneWidget);
+      expect(find.byIcon(Icons.search_rounded), findsOneWidget);
+    });
+
+    testWidgets('2. Kiểm tra hiển thị trạng thái chờ (Loading)', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider(
+          create: (_) => WeatherProvider(),
+          child: const MyApp(),
+        ),
+      );
+
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('3. Kiểm tra điều hướng sang màn hình tìm kiếm', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider(
+          create: (_) => WeatherProvider(),
+          child: const MyApp(),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final searchButton = find.byType(FloatingActionButton);
+      if (searchButton.evaluate().isNotEmpty) {
+        await tester.tap(searchButton);
+        await tester.pumpAndSettle();
+        expect(find.textContaining('Nhập tên thành phố'), findsOneWidget);
+      }
+    });
   });
 }
