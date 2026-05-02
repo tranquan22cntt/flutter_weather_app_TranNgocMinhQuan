@@ -24,6 +24,7 @@ class WeatherProvider extends ChangeNotifier {
 
   Future<void> fetchWeatherByLocation() async {
     _status = WeatherStatus.loading;
+    _errorMessage = '';
     notifyListeners();
 
     try {
@@ -35,30 +36,37 @@ class WeatherProvider extends ChangeNotifier {
       );
 
       final cityName = _currentWeather!.cityName;
-
       _forecast = await _weatherService.getForecast(cityName);
 
+      // Lưu vào bộ nhớ máy
       await _storageService.saveWeatherData(_currentWeather!);
 
       _status = WeatherStatus.loaded;
     } catch (e) {
-      _status = WeatherStatus.error;
-      _errorMessage = e.toString().contains('Failed to get city name')
-          ? 'Không thể xác định tên thành phố tại vị trí này.'
-          : 'Lỗi: ${e.toString()}';
+      debugPrint('Lỗi GPS: $e. Đang chuyển sang chế độ dự phòng thành phố mặc định.');
 
-      final cached = await _storageService.getCachedWeather();
-      if (cached != null) {
-        _currentWeather = cached;
-        _status = WeatherStatus.loaded;
+      try {
+        await fetchWeatherByCity('Hanoi');
+      } catch (cityError) {
+        _status = WeatherStatus.error;
+        _errorMessage = 'Không thể lấy vị trí và dữ liệu dự phòng cũng thất bại.';
+
+        final cached = await _storageService.getCachedWeather();
+        if (cached != null) {
+          _currentWeather = cached;
+          _status = WeatherStatus.loaded;
+        }
       }
     }
     notifyListeners();
   }
 
   Future<void> fetchWeatherByCity(String cityName) async {
-    _status = WeatherStatus.loading;
-    notifyListeners();
+    if (_status != WeatherStatus.loading) {
+      _status = WeatherStatus.loading;
+      _errorMessage = '';
+      notifyListeners();
+    }
 
     try {
       _currentWeather = await _weatherService.getCurrentWeatherByCity(cityName);
@@ -67,8 +75,9 @@ class WeatherProvider extends ChangeNotifier {
       await _storageService.saveWeatherData(_currentWeather!);
       _status = WeatherStatus.loaded;
     } catch (e) {
+      debugPrint('Lỗi tìm kiếm: $e');
       _status = WeatherStatus.error;
-      _errorMessage = 'Không tìm thấy thành phố "$cityName".';
+      _errorMessage = 'Không tìm thấy dữ liệu cho thành phố "$cityName".';
     }
     notifyListeners();
   }

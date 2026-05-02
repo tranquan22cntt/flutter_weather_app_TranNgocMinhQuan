@@ -40,7 +40,6 @@ class SearchScreen extends StatelessWidget {
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                // Nút tìm kiếm bên phải
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.search, color: Colors.blueAccent),
                   onPressed: () {
@@ -62,7 +61,7 @@ class SearchScreen extends StatelessWidget {
             ),
             const SizedBox(height: 30),
             const Text(
-              "Mẹo: Bạn có thể nhập tên thành phố không dấu hoặc có dấu.",
+              "Có thể nhập tên thành phố không dấu hoặc có dấu.",
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white54, fontSize: 13),
             ),

@@ -25,7 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Color _getBackgroundColor(String? condition) {
     if (condition == null) return const Color(0xFF1A202C);
-
     switch (condition.toLowerCase()) {
       case 'clear': return const Color(0xFF87CEEB);
       case 'rain':
@@ -37,7 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Color _getPrimaryColor(String? condition) {
     if (condition == null) return const Color(0xFF2D3748);
-
     switch (condition.toLowerCase()) {
       case 'clear': return const Color(0xFFFDB813);
       case 'rain': return const Color(0xFF4A5568);
@@ -56,55 +54,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
         return Scaffold(
           backgroundColor: bgColor,
-          body: provider.status == WeatherStatus.loading
-              ? const Center(child: CircularProgressIndicator(color: Colors.white))
-              : SafeArea(
-            child: RefreshIndicator(
-              onRefresh: () => provider.fetchWeatherByLocation(),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  children: [
-                    if (weather != null) ...[
-                      Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        color: primaryColor.withOpacity(0.9),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: CurrentWeatherCard(weather: weather),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            WeatherDetailItem(icon: Icons.water_drop, value: '${weather.humidity}%', label: 'Độ ẩm'),
-                            WeatherDetailItem(icon: Icons.air, value: '${weather.windSpeed}m/s', label: 'Gió'),
-                            WeatherDetailItem(icon: Icons.thermostat, value: '${weather.feelsLike.round()}°', label: 'Cảm giác'),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      HourlyForecastList(forecasts: provider.forecast),
-                    ]
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Các nút chức năng
+          body: _buildBody(provider, weather, primaryColor),
           floatingActionButton: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              // Nút xem Bản đồ (Bonus 15%)
               FloatingActionButton(
                 heroTag: 'map',
                 mini: true,
@@ -123,6 +76,105 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildBody(WeatherProvider provider, dynamic weather, Color primaryColor) {
+    if (provider.status == WeatherStatus.loading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: Colors.white),
+            SizedBox(height: 20),
+            Text("Đang cập nhật thời tiết...", style: TextStyle(color: Colors.white70)),
+          ],
+        ),
+      );
+    }
+
+    if (provider.status == WeatherStatus.error && weather == null) {
+      String cleanError = provider.errorMessage.replaceAll('Exception:', '').replaceAll('Lỗi:', '').trim();
+      if (cleanError.isEmpty) cleanError = "Không thể kết nối với máy chủ thời tiết.";
+
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.cloud_off_rounded, size: 100, color: Colors.white24),
+              const SizedBox(height: 20),
+              Text(
+                cleanError,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w300),
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton.icon(
+                onPressed: () => provider.fetchWeatherByLocation(),
+                icon: const Icon(Icons.refresh),
+                label: const Text("THỬ LẠI"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white24,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                ),
+              ),
+              const SizedBox(height: 15),
+              TextButton(
+                onPressed: () => provider.fetchWeatherByCity("Hanoi"),
+                // SỬA LỖI: Đổi Colors.blueSky thành Colors.blue
+                child: const Text("Xem thời tiết Hà Nội (Mẫu)", style: TextStyle(color: Colors.blue)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SafeArea(
+      child: RefreshIndicator(
+        onRefresh: () => provider.fetchWeatherByLocation(),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              if (weather != null) ...[
+                Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  color: primaryColor.withOpacity(0.9),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: CurrentWeatherCard(weather: weather),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      WeatherDetailItem(icon: Icons.water_drop, value: '${weather.humidity}%', label: 'Độ ẩm'),
+                      WeatherDetailItem(icon: Icons.air, value: '${weather.windSpeed}m/s', label: 'Gió'),
+                      WeatherDetailItem(icon: Icons.thermostat, value: '${weather.feelsLike.round()}°', label: 'Cảm giác'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                HourlyForecastList(forecasts: provider.forecast),
+              ]
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

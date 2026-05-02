@@ -44,7 +44,6 @@ class _WeatherMapScreenState extends State<WeatherMapScreen> {
           ..style.borderRadius = '20px',
       );
     } else {
-      // Cấu hình WebView cho Android Emulator
       _controller = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..setBackgroundColor(const Color(0x00000000))
@@ -88,7 +87,6 @@ class _WeatherMapScreenState extends State<WeatherMapScreen> {
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            // Thanh chọn lớp bản đồ (Nâng cao)
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
